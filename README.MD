@@ -187,3 +187,22 @@ openssl pkcs12 -inkey distribution.key -in distribution.pem -export -out distrib
 - Open it
 - Switch to `App Information` tab
 - Write down the `Apple ID`
+
+## Put the variables into Azure Library
+
+1. Upload Secure files
+
+- Upload `distribution.p12`
+- Upload `Default_Provisioning_Profile.mobileprovision`
+
+2. Create variable groups
+
+- Create a group `ios-release-qa`
+- Add variables:
+   - AppleId
+   - AppStoreUploadApiKeyEncoded
+   - AppStoreUploadApiKeyId
+   - AppStoreUploadApiKeyIssuerId
+   - BundleId
+   - CertificatePassword
+   - DevelopmentTeamId
