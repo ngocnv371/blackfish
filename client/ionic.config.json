@@ -1,0 +1,7 @@
+{
+  "name": "blackfish",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react"
+}
