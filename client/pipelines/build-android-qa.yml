@@ -1,0 +1,36 @@
+trigger:
+- qa
+
+pool:
+  name: "Default"
+
+name: $(Date:yyyyMMdd).1.$(Rev:r)
+
+variables:
+  vmImageName: 'windows-latest'
+  appFolder: client
+  appName: blackfish
+  buildConfiguration: Release
+  environment: qa
+
+stages:
+  - stage: Build
+    displayName: Build Android package
+    jobs:
+      - job: Build
+        variables:
+          - group: android-release-qa
+        displayName: Build
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - template: build-ionic-app.yml
+            parameters:
+              environment: $(environment)
+              platform: android
+          - template: build-android-package.yml
+            parameters:
+              keystoreFileName: 'android-release.keystore'
+              keystorePassword: $(keystorePassword)
+              keyAlias: $(keyAlias)
+              keyPassword: $(keyPassword)

@@ -1,0 +1,42 @@
+parameters:
+  - name: keystoreFileName
+    type: string
+  - name: keystorePassword
+    type: string
+  - name: keyAlias
+    type: string
+  - name: keyPassword
+    type: string
+
+steps:
+  - powershell: |
+      $env:JAVA_HOME=$env:JAVA_HOME_11_X64
+      ./gradlew assembleRelease
+    workingDirectory: $(Build.SourcesDirectory)/$(appFolder)/android
+    displayName: 'Build Android Project'
+
+  - task: AndroidSigning@3
+    inputs:
+      apkFiles: '$(Build.SourcesDirectory)/$(appFolder)/android/app/build/outputs/apk/$(buildConfiguration)/*.apk'
+      apksign: true
+      apksignerKeystoreFile: '${{ parameters.keystoreFileName }}'
+      apksignerKeystorePassword: '${{ parameters.keystorePassword }}'
+      apksignerKeystoreAlias: '${{ parameters.keyAlias }}'
+      apksignerKeyPassword: '${{ parameters.keyPassword }}'
+      apksignerArguments: --out $(Build.SourcesDirectory)/$(appFolder)/android/app/build/outputs/apk/$(buildConfiguration)/$(appName)-$(buildConfiguration).apk --verbose
+      zipalign: true
+    displayName: 'Sign the APK'
+
+  - task: CopyFiles@2
+    inputs:
+      SourceFolder: '$(Build.SourcesDirectory)/$(appFolder)/android/app/build/outputs/apk/$(buildConfiguration)'
+      contents: "**/$(appName)-$(buildConfiguration).apk"
+      targetFolder: "$(Build.ArtifactStagingDirectory)/$(appName)"
+    displayName: "Copy signed APK to staging directory"
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: "$(Build.ArtifactStagingDirectory)/$(appName)"
+      ArtifactName: "$(appName)"
+      publishLocation: "Container"
+    displayName: "Publish artifacts"
