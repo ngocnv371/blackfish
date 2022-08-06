@@ -206,3 +206,31 @@ openssl pkcs12 -inkey distribution.key -in distribution.pem -export -out distrib
    - BundleId
    - CertificatePassword
    - DevelopmentTeamId
+
+## Next? Let's do the same thing for Android
+
+The process is the same, with some variations to the steps.
+
+1. Add android platform
+
+```bash
+ionic capacitor add android
+```
+
+2. Create a template to build android package
+
+See [build-android-package.yml](client/pipelines/build-android-package.yml)
+
+3. Create a template to build QA environment
+
+See [build-android-qa.yml](client/pipelines/build-android-qa.yml)
+
+4. Create a keystore to sign the android package
+
+```bash
+echo y | keytool -genkeypair -dname "cn=Blackfish, ou=Software, o=Blackfish, c=US" -alias business -keypass averystrongpassword -keystore android.keystore -storepass evenstrongerpassword -validity 20000
+```
+
+Replace the name and password with your preferences.
+
+5. Create Azure Library variable group `android-release-qa` and upload they keystore file to Secure Files.

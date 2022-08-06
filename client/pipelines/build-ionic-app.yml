@@ -25,6 +25,13 @@ steps:
     displayName: Install frozen packages
 
   - powershell: |
+      npm i -g jetifier
+      npx jetify
+    workingDirectory: $(Build.SourcesDirectory)/$(appFolder)
+    displayName: 'Jetifier for AndroidX'
+    condition: eq('${{ parameters.platform }}', 'android')
+
+  - powershell: |
       $env:APP_ENV='${{ parameters.environment }}'
       echo "Initiate ${{ parameters.platform }} build on $env:APP_ENV environment"
       Invoke-Expression "ren .env.$env:APP_ENV .env.production"
