@@ -1,0 +1,27 @@
+parameters:
+  - name: AppStoreUploadApiKeyId
+    type: string
+  - name: AppStoreUploadApiKeyIssuerId
+    type: string
+  - name: AppStoreUploadApiKeyEncoded
+    type: string
+  - name: appBundleId
+    type: string
+  - name: AppleId
+    type: string
+
+steps:
+  - task: AppStoreRelease@1
+    displayName: 'Upload to AppStore'
+    inputs:
+      authType: 'ApiKey'
+      apiKeyId: ${{ parameters.AppStoreUploadApiKeyId }}
+      apiKeyIssuerId: ${{ parameters.AppStoreUploadApiKeyIssuerId }}
+      apiToken: ${{ parameters.AppStoreUploadApiKeyEncoded }}
+      releaseTrack: 'TestFlight'
+      appIdentifier: ${{ parameters.appBundleId }}
+      appType: 'iOS'
+      ipaPath: '**/*.ipa'
+      shouldSkipWaitingForProcessing: true
+      shouldSkipSubmission: true
+      appSpecificId: ${{ parameters.AppleId }}

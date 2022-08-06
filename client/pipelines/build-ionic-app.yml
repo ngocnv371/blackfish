@@ -1,0 +1,34 @@
+parameters:
+  - name: environment
+    displayName: "Build environment"
+  - name: platform
+    displayName: "Capacitor platform"
+
+steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: "14.x"
+    displayName: "Install Node.js"
+
+  - script: npm i -g @ionic/cli
+    displayName: 'Install Ionic CLI'
+  
+  - task: Cache@2
+    displayName: "Cache npm"
+    inputs:
+      key: '"$(appName)v1" | "$(Agent.OS)" |  $(Build.SourcesDirectory)/$(appFolder)/package.json'
+      path: $(Build.SourcesDirectory)/$(appFolder)/node_modules
+      cacheHitVar: NPM_CACHE_RESTORED
+
+  - script: yarn --cwd ./$(appFolder) install --frozen-lockfile
+    condition: ne(variables.NPM_CACHE_RESTORED, 'true')
+    displayName: Install frozen packages
+
+  - powershell: |
+      $env:APP_ENV='${{ parameters.environment }}'
+      echo "Initiate ${{ parameters.platform }} build on $env:APP_ENV environment"
+      Invoke-Expression "ren .env.$env:APP_ENV .env.production"
+      ionic cap build ${{ parameters.platform }} --no-open --prod
+      npx cap sync ${{ parameters.platform }}
+    workingDirectory: $(Build.SourcesDirectory)/$(appFolder)
+    displayName: 'Build Project'

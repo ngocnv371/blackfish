@@ -1,0 +1,86 @@
+parameters:
+  - name: provisioningProfileFilePath
+    displayName: 'The file path to the .mobileprovision file'
+    type: string
+  - name: provisioningProfileName
+    displayName: 'The name of the .mobileprovision file'
+    type: string
+  - name: certificateSecureFileName
+    displayName: 'Name of the .p12 file'
+    type: string
+  - name: certificatePassword
+    displayName: 'Password to the .p12 file'
+    type: string
+  - name: appDisplayName
+    type: string
+  - name: appBundleId
+    type: string
+  - name: developmentTeamId
+    type: string
+  - name: artifactName
+    type: string
+
+steps:
+  - task: InstallAppleCertificate@2
+    inputs:
+      certSecureFile: '${{ parameters.certificateSecureFileName }}'
+      certPwd: '${{ parameters.certificatePassword }}'
+    displayName: 'Install AdHoc Certificate'
+
+  - task: InstallAppleProvisioningProfile@1
+    inputs:
+      provProfileSecureFile: '${{ parameters.provisioningProfileFilePath }}'
+    displayName: 'Install AdHoc prov profile'
+
+  - task: UpdateiOSVersionInfoPlist@1
+    inputs:
+      infoPlistPath: '$(appFolder)/ios/App/App/Info.plist'
+      bundleShortVersionString: '$(Build.BuildNumber)'
+      bundleVersion: '$(Build.BuildID)'
+
+  - task: DownloadSecureFile@1
+    name: provProfileAppStore
+    displayName: 'Download AdHoc prov profile'
+    inputs:
+      secureFile: '${{ parameters.provisioningProfileFilePath }}'
+
+  - script: |
+      cd $(appFolder)
+      echo "AdHoc prov profile downloaded to $(provProfileAppStore.secureFilePath)"
+      echo "Provisioning Signing Identity $(APPLE_CERTIFICATE_SIGNING_IDENTITY)"
+      echo "Profile UUID $(APPLE_PROV_PROFILE_UUID)"
+      echo "Dev Team ${{ parameters.developmentTeamId }}"
+      mv $(provProfileAppStore.secureFilePath) ios/app
+      ls -al ios/app
+      ls -al ios/app/app
+      ls -al ios/app/app.xcodeproj
+      plutil -replace "CFBundleDisplayName" -string "${{ parameters.appDisplayName }}" 'ios/app/app/Info.plist'
+      sed -i -e '/PRODUCT_BUNDLE_IDENTIFIER =/ s/= .*/= ${{ parameters.appBundleId }};/' 'ios/app/app.xcodeproj/project.pbxproj'
+      sed -i -e '/DEVELOPMENT_TEAM =/ s/= .*/= ${{ parameters.developmentTeamId }};/' 'ios/app/app.xcodeproj/project.pbxproj'
+      mkdir output
+      more ios/app/app/Info.plist
+      more ios/app/app.xcodeproj/project.pbxproj
+    displayName: 'Copy Prov profile & substitute values'
+
+  - task: Xcode@5
+    inputs:
+      actions: 'build'
+      configuration: $(buildConfiguration)
+      sdk: 'iphoneos'
+      xcWorkspacePath: '$(appFolder)/ios/app/app.xcworkspace'
+      scheme: 'App'
+      packageApp: true
+      exportPath: 'output'
+      signingOption: 'manual'
+      signingIdentity: '$(APPLE_CERTIFICATE_SIGNING_IDENTITY)'
+      provisioningProfileUuid: '$(APPLE_PROV_PROFILE_UUID)'
+      teamId: '${{ parameters.developmentTeamId }}'
+      publishJUnitResults: true
+      xcodeVersion: 'default'
+
+  - script: |
+      ls output
+    displayName: 'print the path to the downloaded folder'
+
+  - publish: output
+    artifact: ${{ parameters.artifactName }}

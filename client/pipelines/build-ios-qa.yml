@@ -1,0 +1,48 @@
+trigger:
+- qa
+
+pool:
+  name: "Default"
+
+name: $(Date:yyyyMMdd).1.$(Rev:r)
+
+variables:
+  vmImageName: 'macos-latest'
+  appFolder: client
+  appName: blackfish
+  buildConfiguration: Release
+  environment: qa
+
+stages:
+  - stage: Build
+    displayName: Build iOS package
+    jobs:
+      - job: Build
+        variables:
+          - group: ios-release-qa
+        displayName: Build
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - template: build-ionic-app.yml
+            parameters:
+              environment: $(environment)
+              platform: ios
+          - template: build-ios-package.yml
+            parameters:
+              provisioningProfileName: Distribution Provisioning Profile
+              provisioningProfileFilePath: 'Distribution_Provisioning_Profile.mobileprovision'
+              certificateSecureFileName: 'aps_distribution.p12'
+              certificatePassword: $(CertificatePassword)
+              appDisplayName: '$(DisplayName)'
+              appBundleId: $(BundleID)
+              developmentTeamId: $(DevelopmentTeamId)
+              artifactName: $(appName)
+          - template: publish-to-app-store.yml
+            parameters:
+              appBundleId: $(BundleID)
+              AppStoreUploadApiKeyId: $(AppStoreUploadApiKeyId)
+              AppStoreUploadApiKeyIssuerId: $(AppStoreUploadApiKeyIssuerId)
+              AppStoreUploadApiKeyEncoded: $(AppStoreUploadApiKeyEncoded)
+              AppleId: $(AppleId)
+
