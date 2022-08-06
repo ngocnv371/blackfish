@@ -129,3 +129,61 @@ Once you have created and committed the 3 files above to your repository. Go to 
 Now you have the pipeline, but if you try to run it as is, you will have a bunch of errors.
 
 Let's go through the list of variables you need, and how to obtain them.
+
+1. Bundle ID & DevelopmentTeamId
+
+- Go to [https://developer.apple.com/account/resources/identifiers/list]
+- Create a new identifier `com.blackfish.client`
+- Open the new identifier, write down the *Bundle ID* and *App ID Prefix (Team ID)*
+
+2. Certificate
+
+- Create a key file
+
+```bash
+openssl genrsa -out distribution.key 2048
+```
+
+- Create a *Certificate Signing Request* (CSR) file 
+
+```bash
+openssl req -new -sha256 -key distribution.key -out distribution.csr
+```
+
+- Go to [https://developer.apple.com/account/resources/certificates/list]
+- Create a new Distribution Certificate with the CSR you just created
+- Download the new certificate
+- Convert it to p12 format
+
+```bash
+openssl x509 -inform DER -outform PEM -in distribution.cer -out distribution.pem
+openssl pkcs12 -inkey distribution.key -in distribution.pem -export -out distribution.p12
+```
+
+- If you're running this on Windows, remember to add `winpty` prefix to the `openssl pkcs12` command to allow receiving inputs.
+
+4. Provisioning Profile
+
+- Go to [https://developer.apple.com/account/resources/profiles/list]
+- Create a new Distribution Provisioning profile
+- When asked, select the App ID and Certificate you have just created in earlier steps
+- Download the profile
+
+5. AppStore Upload Api Key
+
+- Go to [https://appstoreconnect.apple.com/access/api]
+- Write down the `Issuer ID`
+- Create a new App Store Connect API key named `UploadToAppStoreKey`
+- Write down the `Key ID`
+- Download the key file, the name should be something like `AuthKey_xxxx.p8`
+- Encode the entire text content of that file to `base64` format. You can use any tools
+- For example: `certutil -encode AuthKey_xxxx.p8 out.txt`
+- Copy the text content of `out.txt`
+
+6. Apple ID
+
+- Go to [https://appstoreconnect.apple.com/apps]
+- Create a new App
+- Open it
+- Switch to `App Information` tab
+- Write down the `Apple ID`
